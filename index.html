@@ -16,7 +16,7 @@
 <main id="top">
 <section class="hero-scroll" id="heroScroll">
   <div class="hero">
-    <video class="hero-video" id="heroVideo" width="100%" height="100%" muted playsinline webkit-playsinline preload="auto" poster="https://resizer.otstatic.com/v2/photos/xlarge/2/79112621.jpg" aria-hidden="true">
+    <video class="hero-video" id="heroVideo" width="100%" height="100%" autoplay muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture poster="https://resizer.otstatic.com/v2/photos/xlarge/2/79112621.jpg" aria-hidden="true">
       <source src="crossroads-kitchen-24s-hero-film.webm.mp4" type="video/mp4">
     </video>
     <div class="hero-shade"></div>
@@ -77,76 +77,72 @@
 
   let target = 0;
   let current = 0;
-  let duration = 24;
+  let duration = 0;
   let raf = 0;
+  let ready = false;
 
-  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+  const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
 
   function updateTarget() {
-    if (!duration) return;
-
     const rect = section.getBoundingClientRect();
     const travel = Math.max(section.offsetHeight - window.innerHeight, 1);
     const raw = clamp((-rect.top) / travel, 0, 1);
-    // Slow the visual progression at the beginning while still reaching the
-    // final frame exactly at the end of the hero section.
-    target = Math.pow(raw, 1.28);
-    video.pause();
+    target = Math.pow(raw, 1.12);
 
-    if (!raf) raf = requestAnimationFrame(render);
+    if (ready) {
+      video.pause();
+      if (!raf) raf = requestAnimationFrame(render);
+    }
   }
 
   function render() {
     raf = 0;
+    current += (target - current) * 0.18;
+    if (Math.abs(target - current) < 0.0004) current = target;
 
-    current += (target - current) * 0.16;
-    if (Math.abs(target - current) < 0.0005) current = target;
-
-    const time = current * duration;
-    if (Number.isFinite(time) && video.readyState >= 2) {
+    if (ready && Number.isFinite(duration) && duration > 0) {
+      const time = clamp(current * duration, 0, Math.max(duration - 0.01, 0));
       try {
-        if (Math.abs(video.currentTime - time) > 0.03) {
-          video.currentTime = time;
-        }
-      } catch (e) {}
+        if (Math.abs(video.currentTime - time) > 0.02) video.currentTime = time;
+      } catch (_) {}
     }
 
-    if (Math.abs(target - current) > 0.0005) {
+    if (Math.abs(target - current) > 0.0004) {
       raf = requestAnimationFrame(render);
     }
   }
 
-  function ready() {
-    if (Number.isFinite(video.duration) && video.duration > 0) {
-      duration = video.duration;
-    }
-
-    try { video.currentTime = 0; } catch (e) {}
+  function primeVideo() {
+    if (ready || !Number.isFinite(video.duration) || video.duration <= 0) return;
+    duration = video.duration;
+    ready = true;
+    video.currentTime = 0;
     updateTarget();
 
-    // Prime the decoder without creating a visible autoplay experience.
-    if (video.muted && video.readyState >= 2) {
-      const prime = video.play();
-      if (prime && typeof prime.then === "function") {
-        prime.then(() => video.pause()).catch(() => {});
-      }
+    // Muted + inline autoplay is supported by modern iOS, Android and desktop browsers.
+    const p = video.play();
+    if (p && typeof p.then === 'function') {
+      p.then(() => {
+        video.pause();
+        updateTarget();
+      }).catch(() => {
+        updateTarget();
+      });
     }
   }
 
-  video.addEventListener("error", () => {
-    console.warn("Crossroads hero video failed to load:", video.error);
+  video.addEventListener('loadedmetadata', primeVideo);
+  video.addEventListener('canplay', primeVideo, { once: true });
+  video.addEventListener('error', () => {
+    // The poster remains visible if a browser cannot decode the video.
+    console.warn('Crossroads hero video failed to load:', video.error);
   });
 
-  video.addEventListener('loadedmetadata', ready);
-  video.addEventListener('loadeddata', ready, { once: true });
-  video.addEventListener('canplay', ready, { once: true });
-
   video.load();
-  if (video.readyState >= 1) ready();
+  if (video.readyState >= 1) primeVideo();
 
   window.addEventListener('scroll', updateTarget, { passive: true });
-  window.addEventListener('resize', updateTarget);
-
+  window.addEventListener('resize', updateTarget, { passive: true });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) updateTarget();
   });
