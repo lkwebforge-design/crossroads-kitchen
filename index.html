@@ -16,7 +16,7 @@
 <main id="top">
 <section class="hero-scroll" id="heroScroll">
   <div class="hero">
-    <video class="hero-video" id="heroVideo" muted autoplay playsinline webkit-playsinline preload="auto" poster="https://resizer.otstatic.com/v2/photos/xlarge/2/79112621.jpg" aria-hidden="true">
+    <video class="hero-video" id="heroVideo" muted playsinline webkit-playsinline preload="auto" poster="https://resizer.otstatic.com/v2/photos/xlarge/2/79112621.jpg" aria-hidden="true">
       <source src="crossroads-kitchen-24s-hero-film.webm.mp4">
     </video>
     <div class="hero-shade"></div>
@@ -79,7 +79,6 @@
   let current = 0;
   let duration = 0;
   let raf = 0;
-  let hasScrolled = false;
 
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -88,12 +87,11 @@
 
     const rect = section.getBoundingClientRect();
     const travel = Math.max(section.offsetHeight - window.innerHeight, 1);
-    target = clamp((-rect.top) / travel, 0, 1);
-
-    if (target > 0.002) {
-      hasScrolled = true;
-      video.pause();
-    }
+    const raw = clamp((-rect.top) / travel, 0, 1);
+    // Slow the visual progression at the beginning while still reaching the
+    // final frame exactly at the end of the hero section.
+    target = Math.pow(raw, 1.28);
+    video.pause();
 
     if (!raf) raf = requestAnimationFrame(render);
   }
@@ -126,16 +124,6 @@
     try { video.currentTime = 0; } catch (e) {}
     updateTarget();
 
-    if (!hasScrolled) {
-      const playAttempt = video.play();
-      if (playAttempt && typeof playAttempt.then === 'function') {
-        playAttempt.then(() => {
-          setTimeout(() => {
-            if (!hasScrolled) video.pause();
-          }, 180);
-        }).catch(() => {});
-      }
-    }
   }
 
   video.addEventListener('loadedmetadata', ready);
