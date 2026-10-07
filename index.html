@@ -141,7 +141,8 @@
   video.addEventListener('loadeddata', ready, { once: true });
   video.addEventListener('canplay', ready, { once: true });
 
-  video.load();\n  if (video.readyState >= 1) ready();
+  video.load();
+  if (video.readyState >= 1) ready();
 
   window.addEventListener('scroll', updateTarget, { passive: true });
   window.addEventListener('resize', updateTarget);
