@@ -77,7 +77,7 @@
 
   let target = 0;
   let current = 0;
-  let duration = 0;
+  let duration = 24;
   let raf = 0;
 
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -117,20 +117,31 @@
   }
 
   function ready() {
-    duration = Number.isFinite(video.duration) && video.duration > 0
-      ? video.duration
-      : 24;
+    if (Number.isFinite(video.duration) && video.duration > 0) {
+      duration = video.duration;
+    }
 
     try { video.currentTime = 0; } catch (e) {}
     updateTarget();
 
+    // Prime the decoder without creating a visible autoplay experience.
+    if (video.muted && video.readyState >= 2) {
+      const prime = video.play();
+      if (prime && typeof prime.then === "function") {
+        prime.then(() => video.pause()).catch(() => {});
+      }
+    }
   }
+
+  video.addEventListener("error", () => {
+    console.warn("Crossroads hero video failed to load:", video.error);
+  });
 
   video.addEventListener('loadedmetadata', ready);
   video.addEventListener('loadeddata', ready, { once: true });
   video.addEventListener('canplay', ready, { once: true });
 
-  if (video.readyState >= 1) ready();
+  video.load();\n  if (video.readyState >= 1) ready();
 
   window.addEventListener('scroll', updateTarget, { passive: true });
   window.addEventListener('resize', updateTarget);
