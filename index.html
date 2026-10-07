@@ -16,8 +16,8 @@
 <main id="top">
 <section class="hero-scroll" id="heroScroll">
   <div class="hero">
-    <video class="hero-video" id="heroVideo" muted playsinline preload="auto" aria-hidden="true">
-      <source src="crossroads-kitchen-24s-hero-film.webm.mp4" type="video/mp4">
+    <video class="hero-video" id="heroVideo" muted autoplay playsinline webkit-playsinline preload="auto" poster="https://resizer.otstatic.com/v2/photos/xlarge/2/79112621.jpg" aria-hidden="true">
+      <source src="crossroads-kitchen-24s-hero-film.webm.mp4">
     </video>
     <div class="hero-shade"></div>
 
@@ -79,25 +79,38 @@
   let current = 0;
   let duration = 0;
   let raf = 0;
+  let hasScrolled = false;
 
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
   function updateTarget() {
     if (!duration) return;
+
     const rect = section.getBoundingClientRect();
     const travel = Math.max(section.offsetHeight - window.innerHeight, 1);
     target = clamp((-rect.top) / travel, 0, 1);
+
+    if (target > 0.002) {
+      hasScrolled = true;
+      video.pause();
+    }
+
     if (!raf) raf = requestAnimationFrame(render);
   }
 
   function render() {
     raf = 0;
-    current += (target - current) * 0.12;
+
+    current += (target - current) * 0.16;
     if (Math.abs(target - current) < 0.0005) current = target;
 
     const time = current * duration;
-    if (Number.isFinite(time)) {
-      try { video.currentTime = time; } catch (e) {}
+    if (Number.isFinite(time) && video.readyState >= 2) {
+      try {
+        if (Math.abs(video.currentTime - time) > 0.03) {
+          video.currentTime = time;
+        }
+      } catch (e) {}
     }
 
     if (Math.abs(target - current) > 0.0005) {
@@ -106,14 +119,30 @@
   }
 
   function ready() {
-    duration = video.duration || 24;
-    video.currentTime = 0;
+    duration = Number.isFinite(video.duration) && video.duration > 0
+      ? video.duration
+      : 24;
+
+    try { video.currentTime = 0; } catch (e) {}
     updateTarget();
+
+    if (!hasScrolled) {
+      const playAttempt = video.play();
+      if (playAttempt && typeof playAttempt.then === 'function') {
+        playAttempt.then(() => {
+          setTimeout(() => {
+            if (!hasScrolled) video.pause();
+          }, 180);
+        }).catch(() => {});
+      }
+    }
   }
 
+  video.addEventListener('loadedmetadata', ready);
+  video.addEventListener('loadeddata', ready, { once: true });
+  video.addEventListener('canplay', ready, { once: true });
+
   if (video.readyState >= 1) ready();
-  video.addEventListener('loadedmetadata', ready, { once: true });
-  video.addEventListener('loadeddata', updateTarget, { once: true });
 
   window.addEventListener('scroll', updateTarget, { passive: true });
   window.addEventListener('resize', updateTarget);
@@ -122,6 +151,5 @@
     if (!document.hidden) updateTarget();
   });
 })();
-</script>
-</body>
+</script>/body>
 </html>
