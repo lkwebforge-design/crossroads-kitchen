@@ -9,8 +9,8 @@ nav a,.reserve,.link{color:inherit;text-decoration:none;font-size:12px}
 .reserve,.btn{border:1px solid currentColor;padding:13px 18px;text-transform:uppercase;letter-spacing:.12em;font-size:10px}
 
 .hero-scroll{height:190vh;position:relative}
-.hero{height:100vh;min-height:680px;position:sticky;top:0;overflow:hidden;color:#fff;display:flex;align-items:flex-end;padding:8vw;isolation:isolate;background:#111}
-.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:0;background:#111;pointer-events:none}
+.hero{height:100vh;min-height:100vh;position:sticky;top:0;overflow:hidden;color:#fff;display:flex;align-items:flex-end;padding:8vw;isolation:isolate;background:#111}
+.hero-video{position:absolute;inset:0;width:100%;height:100%;min-width:100%;min-height:100%;object-fit:cover;object-position:center;z-index:0;background:#111;pointer-events:none}
 .hero-shade{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(0,0,0,.76),rgba(0,0,0,.16) 65%),linear-gradient(0deg,rgba(0,0,0,.72),rgba(0,0,0,.04) 62%,rgba(0,0,0,.24))}
 .hero-copy{position:relative;z-index:2;max-width:800px;text-shadow:0 2px 20px rgba(0,0,0,.22)}
 .hero-copy>p,small,label{font-size:10px;letter-spacing:.2em;text-transform:uppercase}
@@ -49,7 +49,7 @@ footer span{color:#888;letter-spacing:.03em}
 @media(max-width:800px){
   nav{display:none}
   .hero-scroll{height:155vh}
-  .hero{min-height:100svh;height:100svh;padding:25px}
+  .hero{min-height:100vh;height:100vh;height:100dvh;padding:25px}
   .hero-video{object-position:center center}
   .hero-shade{background:linear-gradient(90deg,rgba(0,0,0,.68),rgba(0,0,0,.18)),linear-gradient(0deg,rgba(0,0,0,.78),transparent 68%)}
   .hero h1{font-size:clamp(52px,15vw,82px)}
